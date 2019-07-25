@@ -1,0 +1,1 @@
+export const MIN_REQUIRED_LENGTH_TO_RESOLVE = 4;

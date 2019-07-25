@@ -1,4 +1,4 @@
-import WordModel from '../models/handleWord';
+import { WordModel } from '../models/tables/index';
 
 export default {
   getKnownWords: async (req, res) => {
