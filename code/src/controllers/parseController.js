@@ -10,6 +10,7 @@ import {
 import Service from '../services/baseService';
 import MediaHandler from '../media-handling/media-handler';
 import {MIN_REQUIRED_LENGTH_TO_RESOLVE} from "../config";
+import ClipCreationValidators from './validators/clipCreationValidation';
 
 export default {
     /**
@@ -58,11 +59,16 @@ export default {
      * @returns {Promise<void>}
      */
     saveParseData: async (req, res) => {
-        const {audio, transcript, clipEnds, phrases, userId} = req.body;
+        const { clipEnds, phrases, audioId, userId } = req.body;
 
-        const audioCreated = await saveAudio(audio, transcript);
+        const requestError = ClipCreationValidators.validateRequestBody(req.body);
+        if (requestError) {
+            res.status(400).send(requestError);
+            return;
+        }
 
-        const clipsCreated = await saveClips(audioCreated, clipEnds, phrases);
+        const audioEntity = (await Service.findAll(AudioModel, { id: audioId }))[0];
+        const clipsCreated = await saveClips(audioEntity, clipEnds, phrases);
 
         const resolveData = ResolveDataMethods.getResolveData(
             clipsCreated,
@@ -82,7 +88,6 @@ export default {
         );
 
         res.status(200).json({
-            audioCreated,
             resolvedClipsCreated,
             wordClipsCreated,
             unresolvedStringsCreated,
@@ -90,22 +95,6 @@ export default {
         });
     },
 };
-
-/**
- * For the full audio
- * Create the actual audio media and the audio entity
- * @param audioSource
- * @param transcript
- * @returns {Promise<*|Promise<*>>}
- */
-async function saveAudio(audioSource, transcript) {
-    const audioPath = await MediaHandler.createAudioSource(audioSource);
-    return Service.create(AudioModel, {
-        path: audioPath,
-        transcript,
-    });
-}
-
 
 /**
  * Create the actual audio media for the clips and the clip entities
@@ -127,8 +116,7 @@ async function saveClips(audioEntity, clipEnds, phrases) {
                 audioId: audioEntity.id,
             }),
         ),
-        true,
-        {audioId: audioEntity.id},
+        { audioId: audioEntity.id },
     );
 }
 
@@ -143,15 +131,29 @@ async function markClipsResolvedFromResolveData(resolveData) {
 }
 
 async function makeWordClipsFromResolveData(resolveData) {
-    const wordClipsToCreate = Object.keys(resolveData).reduce((acc, clipId) => {
-        const wordClipsForClip = resolveData[clipId].wordClipEntitiesToCreate || [];
-        if (wordClipsForClip.length) {
-            acc.push(...wordClipsForClip.map(partial => Object.assign(partial, { clipId })));
+    const createdWordClips = [];
+    for (let i = 0; i < Object.keys(resolveData).length; i += 1) {
+        const clipId = Object.keys(resolveData)[i];
+        const partialWordClipsForClip = resolveData[clipId].wordClipEntitiesToCreate || [];
+        if (partialWordClipsForClip.length) {
+            const created = await Service.bulkCreate(
+                WordClipModel,
+                // resolveData[clipId].wordClipEntitiesToCreate does not have clipIds... assign it to each
+                partialWordClipsForClip.map(partial => Object.assign(partial, { clipId })),
+                // after creation, return what we just created by finding all word clips for this clip
+                // and any of the words in these word clips.
+                // TODO this is not sufficient find params when the same word appears twice in a single clip and the
+                // first instance already has a word clip when the second is created -- in that case, the first instance
+                // will be returned along with the second here, since it is of the same wordId and clipId.
+                {
+                    clipId,
+                    wordId: partialWordClipsForClip.map(wc => wc.wordId),
+                },
+            );
+            createdWordClips.push(...created);
         }
-        return acc;
-    }, []);
-
-    return Service.bulkCreate(WordClipModel, wordClipsToCreate, true);
+    }
+    return createdWordClips;
 }
 
 async function makeUnresolvedStringsFromResolveData(resolveData) {
@@ -167,7 +169,6 @@ async function makeUnresolvedStringsFromResolveData(resolveData) {
         ? Service.bulkCreate(
             UnresolvedStringModel,
             unresolvedStrsToCreate,
-            true,
             { clipId: clipIds },
         ) : [];
 }

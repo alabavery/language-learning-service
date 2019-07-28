@@ -63,23 +63,14 @@ describe('BaseService', () => {
         });
 
         it ('calls findAll with buildWhere return', async () => {
-            await service.bulkCreate(model, [{ a: 1 }], true);
+            await service.bulkCreate(model, [{ a: 1 }], { a: 1 });
            expect(model.findAll).toHaveBeenCalledWith('fromBuildWhere');
         });
 
        it ('calls buildWhere with findParams if passed', async () => {
            const findParams = { x: 2 };
-           await service.bulkCreate(model, [{ a: 1 }], true, findParams);
+           await service.bulkCreate(model, [{ a: 1 }], findParams);
            expect(service.buildWhere).toHaveBeenCalledWith(findParams);
-       });
-
-       it ('calls buildWhere with correct params if findParams not passed', async () => {
-           await service.bulkCreate(model, [{ a: 1, b: 2 }, { a: 3 }, { b: 4, c: 5 }], true);
-           expect(service.buildWhere).toHaveBeenCalledWith({
-               a: [1, 3],
-               b: [2, 4],
-               c: 5,
-           });
        });
    });
 });

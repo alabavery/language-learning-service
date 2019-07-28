@@ -1,5 +1,6 @@
 import { Op } from 'sequelize';
 import * as _ from 'lodash';
+import {BulkCreateFindAllError} from "./errors/bulkCreateFindAll.error";
 
 export default {
     /**
@@ -46,6 +47,7 @@ export default {
             this.buildWhere({ id: ids }),
         );
         if (shouldReturn) {
+            // sequelize doesn't return the created
             return model.findAll(this.buildWhere({ id: ids }));
         }
     },
@@ -55,53 +57,27 @@ export default {
     },
     /**
      * Sequelize doesn't return the created entities, so you must findAll
-     * after creating.
+     * after creating.  That is the purpose of this custom bulkCreate method.
      * @param model
      * @param createObjs
-     * @param shouldReturn
      * @param findParams
      * @returns {Promise<void>}
      */
     bulkCreate: async function (
         model,
         createObjs,
-        shouldReturn = false,
         findParams = null,
     ) {
-      await model.bulkCreate(createObjs);
+        // bulkCreate gives us an array of the created, but without the postgres generated ids
+        const partialCreated = await model.bulkCreate(createObjs, { validate: true });
 
-      console.log("created createObjs of");
-      console.log(createObjs);
-      
-      if (shouldReturn) {
-          if (findParams && Object.keys(findParams).length) {
-              const where = this.buildWhere(findParams);
-              console.log(where);
-              return model.findAll(where);
+        if (findParams && Object.keys(findParams).length) {
+          const where = this.buildWhere(findParams);
+          const found = await model.findAll(where);
+          if (found.length !== partialCreated.length) {
+            throw new BulkCreateFindAllError(model.name, findParams, partialCreated.length, found.length);
           }
-          else {
-              return model.findAll(
-                  this.buildWhere(
-                      createObjs.reduce((acc, createObj) => {
-                          Object.keys(createObj).forEach(
-                              columnName => {
-                                  if (Array.isArray(acc[columnName])) {
-                                      acc[columnName].push(createObj[columnName]);
-                                  } else if (acc[columnName] !== undefined) {
-                                      acc[columnName] = [
-                                          acc[columnName],
-                                          createObj[columnName],
-                                      ];
-                                  } else {
-                                      acc[columnName] = createObj[columnName];
-                                  }
-                              },
-                          );
-                          return acc;
-                      }, {}),
-                  ),
-              );
-          }
-      }
+          return found;
+        }
     },
 }
