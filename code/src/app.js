@@ -16,11 +16,13 @@ import wordRouter from './routes/word';
 import parseRouter from './routes/parse';
 import audioRouter from './routes/audio';
 import clipRouter from './routes/clip';
+import lessonRouter from './routes/lesson';
 
 app.use('/word', wordRouter);
 app.use('/parse', parseRouter);
 app.use('/audio', audioRouter);
 app.use('/clip', clipRouter);
+app.use('/lesson', lessonRouter);
 
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`));
