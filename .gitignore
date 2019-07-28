@@ -1,4 +1,5 @@
 /code/node_modules
 /code/.idea
+.idea
 /media
 *.DS_Store
