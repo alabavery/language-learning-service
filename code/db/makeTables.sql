@@ -8,6 +8,8 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE word (
   id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY,
+  str VARCHAR,
+  meaning VARCHAR,
   part_of_speech VARCHAR,
   metadata jsonb
 );
@@ -17,6 +19,7 @@ CREATE TABLE learner (
 );
 
 CREATE TABLE learner_word (
-  learner uuid REFERENCES learner (id),
-  word uuid REFERENCES word (id)
+  learner_id uuid REFERENCES learner (id),
+  word_id uuid REFERENCES word (id),
+  CONSTRAINT UC_learner_word UNIQUE (learner_id, word_id)
 );

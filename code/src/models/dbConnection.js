@@ -1,12 +1,27 @@
-import bluebird from 'bluebird';
+import Sequelize from 'sequelize';
 
-const options = {
-  // Initialization Options
-  promiseLib: bluebird,
-};
+// Option 1: Passing parameters separately
+const sequelize = new Sequelize('language_learning', 'alavery', '', {
+    host: 'localhost',
+    dialect: 'postgres',
+    define: {
+        // camelCase -> snake_case
+        underscored: true,
+        // don't add those fucking "s"s
+        freezeTableName: true,
+    },
+});
 
-const pgp = require('pg-promise')(options);
-const connectionString = 'postgres://localhost:5432/language_learning';
-const db = pgp(connectionString);
+sequelize
+    .authenticate()
+    .then(() => {
+        console.log('Connection has been established successfully.');
+    })
+    .catch(err => {
+        console.error('Unable to connect to the database:', err);
+    });
 
-export default db;
+
+sequelize.sync();
+
+export default sequelize;
