@@ -34,4 +34,23 @@ export default {
 
         res.status(200).json({ lesson, clipLessons });
     },
+    selectClips: async function (req, res) {
+        const { focusWordIds, userId } = req.params;
+
+        // get all userWords for user
+
+        // get all word clips for union of userWords and focusWords
+        // get all clips for word clips
+        // get all unresolvedStrings and wordClips for clips
+        // filter out clips for which:
+        // (number of wordClips for clip in union of userWords and focusWords) /
+        // (all wordClips + unresolvedStrings for clip) < threshold
+        // if resulting clips is longer than length of lesson, prioritize
+        // focus words by dropping any clips w/no focus words until at a length of
+        // lesson
+        // if still longer than length of lesson, drop randomly
+        // if preferred, group together clips that were adjacent in full audios
+    },
 };
+
+async function getClipsForWordIds()

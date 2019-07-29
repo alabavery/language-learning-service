@@ -6,6 +6,8 @@ import WordClipModel from './wordClip';
 import UnresolvedStringModel from './unresolvedString';
 import LessonModel from './lesson';
 import ClipLessonModel from './clipLesson';
+import UserModel from './user';
+import WordUserModel from './wordUser';
 
 
 // clip has a audioId
@@ -18,6 +20,9 @@ defineManyToOne(WordClipModel, WordModel);
 // clip_lessons have a lessonId and a clipId
 defineManyToOne(ClipLessonModel, ClipModel);
 defineManyToOne(ClipLessonModel, LessonModel);
+// word_user has one user and one word
+defineManyToOne(WordUserModel, UserModel);
+defineManyToOne(WordUserModel, WordModel);
 
 export {
     AudioModel,

@@ -8,6 +8,7 @@ import {
     WordModel,
 } from '../models/tables/index';
 import Service from '../services/baseService';
+import ParseService from '../services/parseService';
 import MediaHandler from '../media-handling/media-handler';
 import {MIN_REQUIRED_LENGTH_TO_RESOLVE} from "../config";
 import ClipCreationValidators from './validators/clipCreationValidation';
@@ -77,12 +78,12 @@ export default {
             MIN_REQUIRED_LENGTH_TO_RESOLVE,
         );
 
-        const wordClipsCreated = await makeWordClipsFromResolveData(resolveData);
+        const wordClipsCreated = await ParseService.makeWordClipsFromResolveData(resolveData);
 
-        const unresolvedStringsCreated = await makeUnresolvedStringsFromResolveData(resolveData);
+        const unresolvedStringsCreated = await ParseService.makeUnresolvedStringsFromResolveData(resolveData);
 
         // for those clips that ended up with no unresolved strings, mark them resolved
-        const resolvedClipsCreated = await markClipsResolvedFromResolveData(resolveData);
+        const resolvedClipsCreated = await ParseService.markClipsResolvedFromResolveData(resolveData);
         const unresolvedClipsCreated = clipsCreated.filter(
             clip => !!resolvedClipsCreated.find(resolvedClip => resolvedClip.id === clip.id),
         );
@@ -120,55 +121,3 @@ async function saveClips(audioEntity, clipEnds, phrases) {
     );
 }
 
-async function markClipsResolvedFromResolveData(resolveData) {
-    return Service.updateMany(
-        ClipModel,
-        Object.keys(resolveData)
-            .filter(clipId => resolveData[clipId].unresolvedStringsToCreate.length === 0),
-        {resolved: true},
-        true,
-    );
-}
-
-async function makeWordClipsFromResolveData(resolveData) {
-    const createdWordClips = [];
-    for (let i = 0; i < Object.keys(resolveData).length; i += 1) {
-        const clipId = Object.keys(resolveData)[i];
-        const partialWordClipsForClip = resolveData[clipId].wordClipEntitiesToCreate || [];
-        if (partialWordClipsForClip.length) {
-            const created = await Service.bulkCreate(
-                WordClipModel,
-                // resolveData[clipId].wordClipEntitiesToCreate does not have clipIds... assign it to each
-                partialWordClipsForClip.map(partial => Object.assign(partial, { clipId })),
-                // after creation, return what we just created by finding all word clips for this clip
-                // and any of the words in these word clips.
-                // TODO this is not sufficient find params when the same word appears twice in a single clip and the
-                // first instance already has a word clip when the second is created -- in that case, the first instance
-                // will be returned along with the second here, since it is of the same wordId and clipId.
-                {
-                    clipId,
-                    wordId: partialWordClipsForClip.map(wc => wc.wordId),
-                },
-            );
-            createdWordClips.push(...created);
-        }
-    }
-    return createdWordClips;
-}
-
-async function makeUnresolvedStringsFromResolveData(resolveData) {
-    const { clipIds, unresolvedStrsToCreate } = Object.keys(resolveData).reduce((acc, clipId) => {
-        const strsForClip = resolveData[clipId].unresolvedStringsToCreate || [];
-        if (strsForClip.length) {
-            acc.unresolvedStrsToCreate.push(...strsForClip.map(partial => Object.assign(partial, { clipId })));
-            acc.clipIds.push(clipId);
-        }
-        return acc;
-    }, { clipIds: [], unresolvedStrsToCreate: [] });
-    return unresolvedStrsToCreate.length
-        ? Service.bulkCreate(
-            UnresolvedStringModel,
-            unresolvedStrsToCreate,
-            { clipId: clipIds },
-        ) : [];
-}
