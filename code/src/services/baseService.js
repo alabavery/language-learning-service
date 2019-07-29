@@ -63,11 +63,7 @@ export default {
      * @param findParams
      * @returns {Promise<void>}
      */
-    bulkCreate: async function (
-        model,
-        createObjs,
-        findParams = null,
-    ) {
+    bulkCreate: async function (model, createObjs, findParams = null) {
         // bulkCreate gives us an array of the created, but without the postgres generated ids
         const partialCreated = await model.bulkCreate(createObjs, { validate: true });
 
