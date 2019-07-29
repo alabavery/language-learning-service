@@ -70,9 +70,6 @@ export default {
         if (findParams && Object.keys(findParams).length) {
           const where = this.buildWhere(findParams);
           const found = await model.findAll(where);
-          if (found.length !== partialCreated.length) {
-            throw new BulkCreateFindAllError(model.name, findParams, partialCreated.length, found.length);
-          }
           return found;
         }
     },

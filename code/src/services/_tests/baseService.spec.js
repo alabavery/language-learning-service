@@ -56,9 +56,9 @@ describe('BaseService', () => {
            expect(await service.bulkCreate(model, [{ a: 1 }])).toEqual(undefined);
         });
 
-        it ('returns return of findAll when shouldReturn is true', async () => {
+        it ('returns return of findAll when find params passed', async () => {
             expect(
-                await service.bulkCreate(model, [{ a: 1 }], true)
+                await service.bulkCreate(model, [{ a: 1 }], { a: 1 })
             ).toEqual('fromFindAll');
         });
 
