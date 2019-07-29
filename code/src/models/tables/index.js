@@ -31,8 +31,10 @@ export {
     FrequentStringModel,
     LessonModel,
     UnresolvedStringModel,
+    UserModel,
     WordModel,
     WordClipModel,
+    WordUserModel,
 }
 
 function defineManyToOne(manyModel, oneModel) {
