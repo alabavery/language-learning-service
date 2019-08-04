@@ -8,7 +8,7 @@ export default sequelize.define('audio', {
         allowNull: false,
     },
     transcript: {
-        type: Sequelize.STRING,
+        type: Sequelize.TEXT,
         allowNull: false,
     },
 });

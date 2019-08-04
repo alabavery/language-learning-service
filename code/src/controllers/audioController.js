@@ -5,7 +5,6 @@ import {FULL_AUDIO_DIR_PATH} from "../config";
 export default {
     createAudio: async function (req, res) {
         console.log("\n\n\nhere!!!!!");
-      // await Service.create(AudioModel, req.body);
       res.status(200).json(await Service.create(AudioModel, {
           transcript: req.body.transcript,
           // we want to exclude everything from the path saved in the db that is not

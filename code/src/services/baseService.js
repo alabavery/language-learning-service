@@ -52,7 +52,6 @@ export default {
         }
     },
     create: async function (model, createObj) {
-        console.dir(model);
       return model.create(createObj);
     },
     /**

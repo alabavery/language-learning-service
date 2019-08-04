@@ -8,7 +8,7 @@ export default sequelize.define('clip', {
         allowNull: false,
     },
     text: {
-        type: Sequelize.STRING,
+        type: Sequelize.TEXT,
         allowNull: false,
     },
     resolved: {
