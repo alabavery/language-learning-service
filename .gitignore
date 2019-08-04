@@ -1,5 +1,7 @@
 /code/node_modules
 /code/.idea
-.idea
-/media
+*.idea
+/code/media/lessons/*
+/code/media/clips/*
+/code/media/audioUploads/*
 *.DS_Store
