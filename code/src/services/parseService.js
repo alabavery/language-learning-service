@@ -46,8 +46,7 @@ export default {
     markClipsResolvedFromResolveData: async function (resolveData) {
         return Service.updateMany(
             ClipModel,
-            Object.keys(resolveData)
-                .filter(clipId => resolveData[clipId].unresolvedStringsToCreate.length === 0),
+            Object.keys(resolveData).filter(clipId => resolveData[clipId].unresolvedStringsToCreate.length === 0),
             {resolved: true},
             true,
         );

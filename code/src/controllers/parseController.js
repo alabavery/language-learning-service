@@ -78,6 +78,7 @@ export default {
             MIN_REQUIRED_LENGTH_TO_RESOLVE,
         );
 
+        console.log(resolveData);
         const wordClipsCreated = await ParseService.makeWordClipsFromResolveData(resolveData);
 
         const unresolvedStringsCreated = await ParseService.makeUnresolvedStringsFromResolveData(resolveData);
@@ -85,7 +86,7 @@ export default {
         // for those clips that ended up with no unresolved strings, mark them resolved
         const resolvedClipsCreated = await ParseService.markClipsResolvedFromResolveData(resolveData);
         const unresolvedClipsCreated = clipsCreated.filter(
-            clip => !!resolvedClipsCreated.find(resolvedClip => resolvedClip.id === clip.id),
+            clip => !resolvedClipsCreated.find(resolvedClip => resolvedClip.id === clip.id),
         );
 
         res.status(200).json({

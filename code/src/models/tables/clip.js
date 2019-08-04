@@ -19,8 +19,4 @@ export default sequelize.define('clip', {
         type: Sequelize.INTEGER,
         allowNull: false,
     },
-    numberOfWords: {
-      type: Sequelize.INTEGER,
-      allowNull: false,
-    },
 });

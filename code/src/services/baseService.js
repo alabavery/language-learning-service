@@ -63,8 +63,15 @@ export default {
      * @returns {Promise<void>}
      */
     bulkCreate: async function (model, createObjs, findParams = null) {
-        // bulkCreate gives us an array of the created, but without the postgres generated ids
-        const partialCreated = await model.bulkCreate(createObjs, { validate: true });
+        let partialCreated;
+        try {
+            // bulkCreate gives us an array of the created, but without the postgres generated ids
+            partialCreated = await model.bulkCreate(createObjs, { validate: true });
+        } catch (e) {
+            // e is an aggregate error, which can be treated like an array. We will
+            // just throw the first error.
+            throw e[0];
+        }
 
         if (findParams && Object.keys(findParams).length) {
           const where = this.buildWhere(findParams);

@@ -32,7 +32,7 @@ export default {
             throw new Error(`Error creating clips media: ${e.msg || e.message}`);
         }
 
-        console.log("CREATED CLIPS");
+        console.log("CREATED CLIP MEDIAS");
         return clipPaths;
     },
     joinClipSources: async function (pathsToClips) {

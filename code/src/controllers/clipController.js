@@ -21,6 +21,10 @@ export default {
         }
 
         const audioEntity = (await Service.findAll(AudioModel, { id: audioId }))[0];
+        if (!audioEntity) {
+            res.status(404).send(`Audio by ID ${audioId} not found!`)
+        }
+
         const paths = await MediaHandler.createClipSources(audioEntity.path, clipEnds);
         const clips = await Service.bulkCreate(
             ClipModel,
