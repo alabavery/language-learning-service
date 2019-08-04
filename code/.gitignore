@@ -1,0 +1,6 @@
+/code/node_modules
+/code/.idea
+.idea
+/media
+/code/media
+*.DS_Store
