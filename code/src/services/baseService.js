@@ -42,6 +42,11 @@ export default {
      * @returns {Promise<Promise<Model<any, any>[]> | Promise<Array<Model>> | * | Promise<*>>}
      */
     updateMany: async function (model, ids, updateObj, shouldReturn = false) {
+        // if you don't pass the ids as a a where to the update, it will update all records, so want to
+        // avoid the update call altogether in that case
+        if (!ids || !ids.length) {
+            return [];
+        }
         await model.update(
             updateObj,
             this.buildWhere({ id: ids }),

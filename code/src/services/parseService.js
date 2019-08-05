@@ -44,6 +44,7 @@ export default {
             ) : [];
     },
     markClipsResolvedFromResolveData: async function (resolveData) {
+        console.log("clipIds", Object.keys(resolveData).filter(clipId => resolveData[clipId].unresolvedStringsToCreate.length === 0),);
         return Service.updateMany(
             ClipModel,
             Object.keys(resolveData).filter(clipId => resolveData[clipId].unresolvedStringsToCreate.length === 0),

@@ -21,14 +21,15 @@ export default {
      * this.saveParseData has already run.
      * It should return:
      * - unresolvedStrings
-     * - phrases
+     * - transcript
      * - suggestions: { [unresolvedStringId]: knownWords[] }
      * @param req
      * @param res
      * @returns {Promise<void>}
      */
     getResolveDataForAudio: async (req, res) => {
-        const { audioId } = req.params;
+        const { audioId } = req.query;
+        const audio = (await Service.findAll(AudioModel, { id: audioId }))[0];
         const clips = await Service.findAll(ClipModel, { audioId });
         const knownWords = await Service.findAll(WordModel);
         const unresolvedStrings = await Service.findAll(
@@ -38,7 +39,7 @@ export default {
 
         res.status(200).json({
             unresolvedStrings,
-            phrases: clips.map(clip => clip.phrase),
+            transcript: audio.transcript,
             suggestions: unresolvedStrings.reduce((acc, unresolvedString) => {
                 acc[unresolvedString.id] = ResolveDataMethods.getSuggestionsForString(
                     ResolveDataMethods.standardizeString(unresolvedString.rawString),
