@@ -3,6 +3,9 @@ import * as _ from 'lodash';
 import {BulkCreateFindAllError} from "./errors/bulkCreateFindAll.error";
 
 export default {
+    delete: async function (entity) {
+        return entity.destroy();
+    },
     /**
      * Should return undefined if no where is intended.
      *

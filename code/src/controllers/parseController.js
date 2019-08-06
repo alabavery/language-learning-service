@@ -14,40 +14,76 @@ import {MIN_REQUIRED_LENGTH_TO_RESOLVE} from "../config";
 import ClipCreationValidators from './validators/clipCreationValidation';
 
 export default {
+    resolveUnresolvedString: async (req, res) => {
+        const { unresolvedStringId, wordId } = req.body;
+        const unresolvedString = (await Service.findAll(UnresolvedStringModel, { id: unresolvedStringId }))[0];
+
+        const wordClip = await Service.create(
+            WordClipModel,
+            {
+              rawString: unresolvedString.rawString,
+              locationInText: unresolvedString.locationInText,
+              clipId: unresolvedString.clipId,
+              wordId,
+            },
+        );
+        await Service.delete(unresolvedString);
+        const unresolvedStringsForClip = await Service.findAll(
+            UnresolvedStringModel,
+            {
+                clipId: unresolvedString.clipId,
+            },
+        );
+
+        // if this was the last unresolved string, then the clip is resolved
+        if (unresolvedStringsForClip.length === 1) {
+            await Service.updateOne(ClipModel, { resolved: true });
+        }
+        res.status(200).json(wordClip);
+    },
     /**
      * This provides the data needed for a user to resolve unresolvedStrings for a given
      * audio/transcript.
      * This is after the user has uploaded an audio and transcript and the method
      * this.saveParseData has already run.
-     * It should return:
-     * - unresolvedStrings
-     * - transcript
+     * It should return an array, where each item is an object of the following, each corresponding to
+     * an unresolved clip:
+     * - clip (full clip object)
+     * - unresolvedStrings -> UnresolvedString[]
      * - suggestions: { [unresolvedStringId]: knownWords[] }
-     * @param req
-     * @param res
-     * @returns {Promise<void>}
      */
     getResolveDataForAudio: async (req, res) => {
         const { audioId } = req.query;
-        const audio = (await Service.findAll(AudioModel, { id: audioId }))[0];
-        const clips = await Service.findAll(ClipModel, { audioId });
+        // we will give the clips in order in the response
+        const clips = await ClipModel.findAll({
+            where: { audioId, resolved: false },
+            order: [['ordinalInFullAudio', 'DESC']],
+        });
         const knownWords = await Service.findAll(WordModel);
+
         const unresolvedStrings = await Service.findAll(
             UnresolvedStringModel,
-            {clipId: clips.map(c => c.id)},
+            { clipId: clips.map(c => c.id) },
         );
 
-        res.status(200).json({
-            unresolvedStrings,
-            transcript: audio.transcript,
-            suggestions: unresolvedStrings.reduce((acc, unresolvedString) => {
-                acc[unresolvedString.id] = ResolveDataMethods.getSuggestionsForString(
-                    ResolveDataMethods.standardizeString(unresolvedString.rawString),
-                    knownWords,
-                );
-                return acc;
-            }, {}),
-        });
+        res.status(200).json(
+            clips.map(clip => {
+                const unresolvedStringsForClip = unresolvedStrings
+                    .filter(us => us.clipId === clip.id)
+                    .sort((a, b) => a.locationInText - b.locationInText);
+                return {
+                    clip,
+                    unresolvedStrings: unresolvedStringsForClip,
+                    suggestions: unresolvedStringsForClip.reduce((acc, unresolvedString) => {
+                        acc[unresolvedString.id] = ResolveDataMethods.getSuggestionsForString(
+                            ResolveDataMethods.standardizeString(unresolvedString.rawString),
+                            knownWords,
+                        );
+                        return acc;
+                    }, {}),
+                };
+            }),
+        );
     },
     /**
      * Save parse data should:
