@@ -57,7 +57,7 @@ export default {
         // we will give the clips in order in the response
         const clips = await ClipModel.findAll({
             where: { audioId, resolved: false },
-            order: [['ordinalInFullAudio', 'DESC']],
+            order: [['ordinalInFullAudio', 'ASC']],
         });
         const knownWords = await Service.findAll(WordModel);
 
