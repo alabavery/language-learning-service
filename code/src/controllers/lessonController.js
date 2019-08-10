@@ -5,6 +5,7 @@ import {
     ClipLessonModel,
     UnresolvedStringModel,
     WordClipModel,
+    WordLessonModel,
     WordUserModel,
 } from '../models/tables/index';
 import Service from '../services/baseService';
@@ -40,13 +41,14 @@ export default {
         res.status(200).json({ lesson, clipLessons });
     },
     selectClips: async function (req, res) {
-        const { focusWordIds, userId, thresholdForUserKnowledge, numOfClipsInLesson } = req.params;
+        const { focusWordIds, userId, thresholdForUserKnowledge, numOfClipsInLesson } = req.query;
 
         const {
             clips,
             userWordClips,
             allUnresolvedStringsForClips,
             allWordClipsForClips,
+            allWordLessonsForUser,
         } = await getData(userId);
 
         const clipsToUse = MakeLessonFunctions.getClipsToUserInOrder(
@@ -54,6 +56,7 @@ export default {
             userWordClips,
             allWordClipsForClips,
             allUnresolvedStringsForClips,
+            allWordLessonsForUser,
             thresholdForUserKnowledge,
             numOfClipsInLesson,
             focusWordIds,
@@ -63,6 +66,7 @@ export default {
 };
 
 async function getData(userId) {
+    console.log("\n\nuser id is ", userId);
     // get all userWords for user
     const userWords = await Service.findAll(WordUserModel, { userId });
     // get all word clips user words
@@ -79,5 +83,11 @@ async function getData(userId) {
         WordClipModel,
         {clipId: clips.map(c => c.id) },
     );
-    return { clips, userWordClips, allUnresolvedStringsForClips, allWordClipsForClips };
+
+    const allLessonsForUser = await Service.findAll(LessonModel, { userId });
+    const allWordLessonsForUser = await Service.findAll(WordLessonModel, {
+        lessonId: allLessonsForUser.map(l => l.id),
+    });
+
+    return { clips, userWordClips, allUnresolvedStringsForClips, allWordClipsForClips, allWordLessonsForUser };
 }

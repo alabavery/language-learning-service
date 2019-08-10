@@ -3,6 +3,7 @@ function getClipsToUserInOrder(
     userWordClips,
     allWordClipsForClips,
     allUnresolvedStringsForClips,
+    allWordLessonsForUser,
     thresholdForUserKnowledge,
     numOfClipsInLesson,
     focusWordIds,
@@ -20,6 +21,7 @@ function getClipsToUserInOrder(
         numOfClipsInLesson,
         userWordClips,
         allWordClipsForClips,
+        allWordLessonsForUser,
         focusWordIds,
     );
     // if preferred, group together clips that were adjacent in full audios
@@ -60,6 +62,7 @@ export function getUsableClips(
  * @param usableClips - clips that user knows enough words in
  * @param numOfClipsInLesson - num of clips to put in lesson
  * @param allWordClipsForClips - all word clips for the clips referenced by useWordClips
+ * @param allWordLessonsForUser
  * @param focusWordIds
  * @returns {*} - an array of clips of the length numOfClipsInLesson, where foc
  */
@@ -67,10 +70,13 @@ export function getClipsToUseFromUsableClips(
     usableClips,
     numOfClipsInLesson,
     allWordClipsForClips,
+    allWordLessonsForUser,
     focusWordIds,
 ) {
     if (focusWordIds && focusWordIds.length) {
         usableClips = sortClipsByNumberOfFocusWords(usableClips, focusWordIds, allWordClipsForClips);
+    } else {
+        usableClips = sortClipsByNumberOfUnusedWords(usableClips, allWordClipsForClips, allWordLessonsForUser);
     }
     // if still longer than length of lesson, drop randomly
     return usableClips.length > numOfClipsInLesson
@@ -78,19 +84,43 @@ export function getClipsToUseFromUsableClips(
         : usableClips;
 }
 
+export const sortClipsByNumberOfUnusedWords = (
+    clips,
+    allWordClipsForClips,
+    allWordLessonsForUser,
+) => {
+    const usedWordIds = allWordLessonsForUser.map(wl => wl.wordId);
+    const numOfUsedWordsByClipId = getNumOfWordsFromListInClipsByClipId(
+      clips,
+      allWordClipsForClips,
+      usedWordIds,
+    );
+    // sort in reverse order, since we want the ones with the FEWEST used words
+    return clips.sort((a, b) => numOfUsedWordsByClipId[a.id] - numOfUsedWordsByClipId[b.id]);
+};
+
 export const sortClipsByNumberOfFocusWords = (clips, focusWordIds, allWordClipsForClips) => {
-    // if resulting clips is longer than length of lesson, prioritize
-    // focus words by dropping any clips w/no focus words until at a length of
-    // lesson
-    const getNumOfFocusWordsInClip = clip => {
+    const numOfFocusWordsByClipId = getNumOfWordsFromListInClipsByClipId(
+      clips,
+      allWordClipsForClips,
+      focusWordIds,
+    );
+    return clips.sort((a, b) => numOfFocusWordsByClipId[b.id] - numOfFocusWordsByClipId[a.id]);
+};
+
+const getNumOfWordsFromListInClipsByClipId = (
+    clips,
+    allWordClipsForClips,
+    wordIds,
+) => {
+    const getNumOfWordsFromListInClip = clip => {
         const wordClipsInClip = allWordClipsForClips.filter(wc => wc.clipId === clip.id);
-        return wordClipsInClip.filter(wc => focusWordIds.includes(wc.wordId)).length;
+        return wordClipsInClip.filter(wc => wordIds.includes(wc.wordId)).length;
     };
-    const numOfFocusWordsByClipId = clips.reduce((acc, clip) => {
-        acc[clip.id] = getNumOfFocusWordsInClip(clip);
+    return clips.reduce((acc, clip) => {
+        acc[clip.id] = getNumOfWordsFromListInClip(clip);
         return acc;
     }, {});
-    return clips.sort((a, b) => numOfFocusWordsByClipId[b.id] - numOfFocusWordsByClipId[a.id]);
 };
 
 function orderClips(clips) {
