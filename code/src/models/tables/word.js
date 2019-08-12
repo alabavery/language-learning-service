@@ -10,7 +10,7 @@ export default sequelize.define('word', {
     type: Sequelize.STRING,
     allowNull: false,
   },
-  partOfSpeech: {
+  partsOfSpeech: {
     type: Sequelize.STRING,
     allowNull: false,
   },
